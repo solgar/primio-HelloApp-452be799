@@ -31,10 +31,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _fadeIn;
   late final Animation<Offset> _slideUp;
+
+  late final AnimationController _spinController;
+  late final Animation<double> _spin;
 
   @override
   void initState() {
@@ -49,11 +52,25 @@ class _HomeScreenState extends State<HomeScreen>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
     _controller.forward();
+
+    _spinController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _spin = Tween<double>(begin: 0, end: 2).animate(
+      CurvedAnimation(parent: _spinController, curve: Curves.decelerate),
+    );
+  }
+
+  void _onIconTap() {
+    if (_spinController.isAnimating) return;
+    _spinController.forward(from: 0);
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _spinController.dispose();
     super.dispose();
   }
 
@@ -71,17 +88,23 @@ class _HomeScreenState extends State<HomeScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    color: colors.primaryContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.waving_hand_rounded,
-                    size: 48,
-                    color: colors.onPrimaryContainer,
+                GestureDetector(
+                  onTap: _onIconTap,
+                  child: RotationTransition(
+                    turns: _spin,
+                    child: Container(
+                      width: 96,
+                      height: 96,
+                      decoration: BoxDecoration(
+                        color: colors.primaryContainer,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.waving_hand_rounded,
+                        size: 48,
+                        color: colors.onPrimaryContainer,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
