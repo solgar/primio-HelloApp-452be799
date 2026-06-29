@@ -42,6 +42,9 @@ class _HomeScreenState extends State<HomeScreen>
   late final AnimationController _textSpinController;
   late final Animation<double> _textSpin;
 
+  late final AnimationController _welcomeSpinController;
+  late final Animation<double> _welcomeSpin;
+
   @override
   void initState() {
     super.initState();
@@ -71,6 +74,14 @@ class _HomeScreenState extends State<HomeScreen>
     _textSpin = Tween<double>(begin: 0, end: 2).animate(
       CurvedAnimation(parent: _textSpinController, curve: Curves.decelerate),
     );
+
+    _welcomeSpinController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _welcomeSpin = Tween<double>(begin: 0, end: 2).animate(
+      CurvedAnimation(parent: _welcomeSpinController, curve: Curves.decelerate),
+    );
   }
 
   void _onIconTap() {
@@ -83,11 +94,17 @@ class _HomeScreenState extends State<HomeScreen>
     _textSpinController.forward(from: 0);
   }
 
+  void _onWelcomeTap() {
+    if (_welcomeSpinController.isAnimating) return;
+    _welcomeSpinController.forward(from: 0);
+  }
+
   @override
   void dispose() {
     _controller.dispose();
     _spinController.dispose();
     _textSpinController.dispose();
+    _welcomeSpinController.dispose();
     super.dispose();
   }
 
@@ -139,10 +156,16 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  'Welcome to HelloApp',
-                  style: text.bodyLarge?.copyWith(
-                    color: colors.onSurfaceVariant,
+                GestureDetector(
+                  onTap: _onWelcomeTap,
+                  child: RotationTransition(
+                    turns: _welcomeSpin,
+                    child: Text(
+                      'Welcome to HelloApp',
+                      style: text.bodyLarge?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
                   ),
                 ),
               ],
