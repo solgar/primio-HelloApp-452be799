@@ -39,6 +39,9 @@ class _HomeScreenState extends State<HomeScreen>
   late final AnimationController _spinController;
   late final Animation<double> _spin;
 
+  late final AnimationController _textSpinController;
+  late final Animation<double> _textSpin;
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +63,14 @@ class _HomeScreenState extends State<HomeScreen>
     _spin = Tween<double>(begin: 0, end: 2).animate(
       CurvedAnimation(parent: _spinController, curve: Curves.decelerate),
     );
+
+    _textSpinController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _textSpin = Tween<double>(begin: 0, end: 2).animate(
+      CurvedAnimation(parent: _textSpinController, curve: Curves.decelerate),
+    );
   }
 
   void _onIconTap() {
@@ -67,10 +78,16 @@ class _HomeScreenState extends State<HomeScreen>
     _spinController.forward(from: 0);
   }
 
+  void _onTextTap() {
+    if (_textSpinController.isAnimating) return;
+    _textSpinController.forward(from: 0);
+  }
+
   @override
   void dispose() {
     _controller.dispose();
     _spinController.dispose();
+    _textSpinController.dispose();
     super.dispose();
   }
 
@@ -108,11 +125,17 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text(
-                  'Hello, World!',
-                  style: text.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: colors.onSurface,
+                GestureDetector(
+                  onTap: _onTextTap,
+                  child: RotationTransition(
+                    turns: _textSpin,
+                    child: Text(
+                      'Hello, World!',
+                      style: text.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colors.onSurface,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
