@@ -45,6 +45,10 @@ class _HomeScreenState extends State<HomeScreen>
   late final AnimationController _welcomeSpinController;
   late final Animation<double> _welcomeSpin;
 
+  late final AnimationController _rainbowController;
+  late final Animation<double> _rainbow;
+  bool _rainbowActive = false;
+
   @override
   void initState() {
     super.initState();
@@ -82,6 +86,27 @@ class _HomeScreenState extends State<HomeScreen>
     _welcomeSpin = Tween<double>(begin: 0, end: 2).animate(
       CurvedAnimation(parent: _welcomeSpinController, curve: Curves.decelerate),
     );
+
+    _rainbowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    );
+    // Phase 1 (0→0.7): fast rainbow burst, 6 hue cycles, decelerating
+    // Phase 2 (0.7→1.0): smooth fade back to original (driven separately in builder)
+    _rainbow = Tween<double>(begin: 0, end: 6).animate(
+      CurvedAnimation(
+        parent: _rainbowController,
+        curve: const Interval(0.0, 0.7, curve: Curves.decelerate),
+      ),
+    );
+  }
+
+  void _onIconLongPress() {
+    if (_rainbowController.isAnimating) return;
+    setState(() => _rainbowActive = true);
+    _rainbowController.forward(from: 0).then((_) {
+      if (mounted) setState(() => _rainbowActive = false);
+    });
   }
 
   void _onIconTap() {
@@ -105,6 +130,7 @@ class _HomeScreenState extends State<HomeScreen>
     _spinController.dispose();
     _textSpinController.dispose();
     _welcomeSpinController.dispose();
+    _rainbowController.dispose();
     super.dispose();
   }
 
@@ -122,24 +148,58 @@ class _HomeScreenState extends State<HomeScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                GestureDetector(
-                  onTap: _onIconTap,
-                  child: RotationTransition(
-                    turns: _spin,
-                    child: Container(
-                      width: 96,
-                      height: 96,
-                      decoration: BoxDecoration(
-                        color: colors.primaryContainer,
-                        shape: BoxShape.circle,
+                AnimatedBuilder(
+                  animation: _rainbow,
+                  builder: (context, child) {
+                    final Color containerColor;
+                    final Color iconColor;
+                    if (!_rainbowActive) {
+                      containerColor = colors.primaryContainer;
+                      iconColor = colors.onPrimaryContainer;
+                    } else {
+                      final t = _rainbowController.value;
+                      final hue = (_rainbow.value * 360) % 360;
+                      // Phase 1: 0→0.7 — rainbow burst
+                      // Phase 2: 0.7→1.0 — animated blend back to theme colors
+                      final rainbowContainerColor =
+                          HSVColor.fromAHSV(1, hue, 0.7, 1.0).toColor();
+                      final rainbowIconColor =
+                          HSVColor.fromAHSV(1, (hue + 180) % 360, 0.8, 1.0)
+                              .toColor();
+                      final double fadeBack =
+                          t < 0.7 ? 0.0 : ((t - 0.7) / 0.3).clamp(0.0, 1.0);
+                      containerColor = Color.lerp(
+                        rainbowContainerColor,
+                        colors.primaryContainer,
+                        Curves.easeInOut.transform(fadeBack),
+                      )!;
+                      iconColor = Color.lerp(
+                        rainbowIconColor,
+                        colors.onPrimaryContainer,
+                        Curves.easeInOut.transform(fadeBack),
+                      )!;
+                    }
+                    return GestureDetector(
+                      onTap: _onIconTap,
+                      onLongPress: _onIconLongPress,
+                      child: RotationTransition(
+                        turns: _spin,
+                        child: Container(
+                          width: 96,
+                          height: 96,
+                          decoration: BoxDecoration(
+                            color: containerColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.waving_hand_rounded,
+                            size: 48,
+                            color: iconColor,
+                          ),
+                        ),
                       ),
-                      child: Icon(
-                        Icons.waving_hand_rounded,
-                        size: 48,
-                        color: colors.onPrimaryContainer,
-                      ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
                 GestureDetector(
